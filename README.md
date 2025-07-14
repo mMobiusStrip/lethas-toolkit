@@ -20,7 +20,7 @@ Yerel ağlarda IP tarama, ARP dinleme, DNS çözümleme, ping ve traceroute gibi
 
 ## 📸 Ekran Görüntüsü
 
-![Arayüz Görüntüsü](screenshots/main.png)
+![Arayüz Görüntüsü](screenshots/Main.png)
 
 ---
 
