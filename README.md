@@ -20,7 +20,7 @@ Yerel ağlarda IP tarama, ARP dinleme, DNS çözümleme, ping ve traceroute gibi
 
 ## 📸 Ekran Görüntüsü
 
-![Arayüz Görüntüsü](screenshots/main.png)
+![Arayüz Görüntüsü](https://hizliresim.com/6lpbwzs)
 
 ---
 
@@ -75,5 +75,5 @@ Katkı sağlamak isteyenler pull request gönderebilir.
 
 ---
 
-**Geliştirici:** [@lethas](https://github.com/)
+**Geliştirici:** [@lethas](https://github.com/mMobiusStrip/)
 
