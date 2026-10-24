@@ -823,9 +823,9 @@ void windowButtons(float y0, float h, float viewW) {
     }
 }
 
+// FramePadding, menü çubuğu yüksekliğini Begin() anında belirlediği için draw() içinde Begin'den ÖNCE verilir.
 void menuBar() {
     State& s = S();
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, {12, ImGui::GetFontSize() * 0.55f});
     if (ImGui::BeginMenuBar()) {
         const float h = ImGui::GetFrameHeight();
         const ImVec2 wp = ImGui::GetWindowPos();
@@ -857,7 +857,6 @@ void menuBar() {
         windowButtons(wp.y, h, ImGui::GetMainViewport()->Size.x);
         ImGui::EndMenuBar();
     }
-    ImGui::PopStyleVar();
 }
 
 }  // namespace
@@ -917,11 +916,12 @@ void draw() {
     ImGui::SetNextWindowPos(vp->WorkPos);
     ImGui::SetNextWindowSize(vp->WorkSize);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, {12, ImGui::GetFontSize() * 0.55f});  // başlık çubuğu yüksekliği
     ImGui::Begin("##root", nullptr,
                  ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
                      ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoBringToFrontOnFocus);
-    ImGui::PopStyleVar();
     menuBar();
+    ImGui::PopStyleVar(2);
 
     // sol kenar çubuğu
     float sideW = ImGui::GetFontSize() * 13.f;

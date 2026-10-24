@@ -100,6 +100,11 @@ static LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             float s = GetDpiForWindow(hwnd) / 96.f;
             auto* mm = reinterpret_cast<MINMAXINFO*>(lp);
             mm->ptMinTrackSize = {static_cast<LONG>(980 * s), static_cast<LONG>(640 * s)};
+            // Ekranı kaplarken pencerenin kendisi çalışma alanına otursun (taşan, boyanmamış beyaz kısım kalmasın).
+            MONITORINFO mi{sizeof mi};
+            GetMonitorInfoW(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST), &mi);
+            mm->ptMaxPosition = {mi.rcWork.left - mi.rcMonitor.left, mi.rcWork.top - mi.rcMonitor.top};
+            mm->ptMaxSize = {mi.rcWork.right - mi.rcWork.left, mi.rcWork.bottom - mi.rcWork.top};
             return 0;
         }
         case WM_SIZE:
