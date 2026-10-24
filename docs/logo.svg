@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Lethas Toolkit logo">
+  <title>Lethas Toolkit</title>
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#16c5ff" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#16c5ff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="56" fill="#0b1117" stroke="#16c5ff" stroke-opacity="0.35" stroke-width="3"/>
+  <circle cx="128" cy="128" r="100" fill="url(#glow)"/>
+  <circle cx="128" cy="128" r="84" fill="none" stroke="#16c5ff" stroke-opacity="0.90" stroke-width="6"/>
+  <circle cx="128" cy="128" r="56" fill="none" stroke="#16c5ff" stroke-opacity="0.55" stroke-width="5"/>
+  <circle cx="128" cy="128" r="28" fill="none" stroke="#16c5ff" stroke-opacity="0.30" stroke-width="4"/>
+  <path d="M128 128 L128 44 A84 84 0 0 1 206.93 99.27 Z" fill="#16c5ff" fill-opacity="0.26"/>
+  <line x1="128" y1="128" x2="206.93" y2="99.27" stroke="#16c5ff" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="176" cy="84" r="17" fill="#45ed73" fill-opacity="0.18"/>
+  <circle cx="176" cy="84" r="9" fill="#45ed73"/>
+  <circle cx="82" cy="152" r="7" fill="#16c5ff"/>
+  <circle cx="152" cy="188" r="7" fill="#ffe016"/>
+  <circle cx="128" cy="128" r="10" fill="#edf5fa"/>
+</svg>

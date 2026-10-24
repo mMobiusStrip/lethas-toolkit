@@ -1,0 +1,6 @@
+build/
+out/
+.vs/
+*.csv
+*.user
+CMakeUserPresets.json
