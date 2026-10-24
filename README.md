@@ -55,7 +55,7 @@ Python sürümüne göre yenilikler:
 Gereksinimler: Visual Studio 2022 (veya Build Tools, "Desktop development with C++") ve CMake 3.20+. Dear ImGui derleme sırasında otomatik indirilir.
 
 ```powershell
-cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+cmake -S . -B build -A x64
 cmake --build build --config Release
 .\build\Release\LethasToolkit.exe
 ```
