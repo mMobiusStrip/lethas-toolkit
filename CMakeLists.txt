@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.20)
 # Statik CRT: tek exe, vcredist gerekmez
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
-project(LethasToolkit VERSION 0.2.0 LANGUAGES CXX)
+project(LethasToolkit VERSION 0.3.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -27,6 +27,7 @@ target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/
 # Arayüzden bağımsız çekirdek
 add_library(lt_core STATIC
     src/core/common.cpp
+    src/core/i18n.cpp
     src/core/icmp.cpp
     src/core/port_scanner.cpp
     src/core/ip_scanner.cpp

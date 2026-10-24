@@ -12,6 +12,7 @@
 
 #include "core/arp_monitor.h"
 #include "core/common.h"
+#include "core/i18n.h"
 #include "core/ip_scanner.h"
 #include "core/net_tests.h"
 #include "core/port_scanner.h"
@@ -21,6 +22,8 @@ namespace ui {
 namespace {
 
 using namespace lt;
+
+constexpr const char* kVersion = "0.3.0";
 
 // ---------------------------------------------------------------- tema ----
 // Renkler tmog.org (koyu tema) paletinden; metin renkleri okunabilirlik için açıldı.
@@ -140,7 +143,7 @@ void tip(const char* text) {
     if (!ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort | ImGuiHoveredFlags_AllowWhenDisabled)) return;
     ImGui::BeginTooltip();
     ImGui::PushTextWrapPos(ImGui::GetFontSize() * 24.f);
-    ImGui::TextUnformatted(text);
+    ImGui::TextUnformatted(T(text));
     ImGui::PopTextWrapPos();
     ImGui::EndTooltip();
 }
@@ -152,7 +155,7 @@ bool accentButton(const char* label, bool danger = false, ImVec2 size = {0, 0}) 
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, mix(base, kInk, 0.25f));
     ImGui::PushStyleColor(ImGuiCol_Text, kInk);
     ImGui::PushFont(gBold);
-    bool r = ImGui::Button(label, size);
+    bool r = ImGui::Button(T(label), size);
     ImGui::PopFont();
     ImGui::PopStyleColor(4);
     return r;
@@ -166,7 +169,7 @@ bool chip(const char* label) {
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, alpha(gAccent, 0.28f));
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, alpha(gAccent, 0.42f));
     ImGui::PushStyleColor(ImGuiCol_Text, mix(gAccent, kText, 0.25f));
-    bool r = ImGui::Button(label);
+    bool r = ImGui::Button(T(label));
     ImGui::PopStyleColor(4);
     ImGui::PopStyleVar(2);
     return r;
@@ -212,24 +215,24 @@ void ledBar(float frac, bool running, ImVec4 color, int leds = 28) {
     ImGui::Dummy({leds * (cw + gap), ImGui::GetTextLineHeight()});
 }
 
-void muted(const char* t) { ImGui::TextColored(kMuted, "%s", t); }
+void muted(const char* t) { ImGui::TextColored(kMuted, "%s", T(t)); }
 
 void sectionTitle(const char* title) {
     ImGui::PushFont(gTitle);
-    ImGui::TextColored(gAccent, "%s", title);
+    ImGui::TextColored(gAccent, "%s", T(title));
     ImGui::PopFont();
 }
 
 // Sayfa üstü açıklaması: ne işe yarar + örnek.
 void intro(const char* text) {
     ImGui::PushTextWrapPos(0);
-    ImGui::TextColored(kMuted, "%s", text);
+    ImGui::TextColored(kMuted, "%s", T(text));
     ImGui::PopTextWrapPos();
 }
 
 void tryLabel() {
     ImGui::AlignTextToFramePadding();
-    ImGui::TextColored(kMuted2, "Try:");
+    ImGui::TextColored(kMuted2, T("Try:"));
     ImGui::SameLine();
 }
 
@@ -311,7 +314,7 @@ std::string rangeToString(uint32_t a, uint32_t b) {
 
 void copyText(const std::string& t, const char* what) {
     ImGui::SetClipboardText(t.c_str());
-    setStatus(std::string(what) + " copied: " + t);
+    setStatus(fmt(T("%s copied: %s"), T(what), t.c_str()));
 }
 
 void goTests(const std::string& ip, int action) {
@@ -348,17 +351,17 @@ void pageIpScan() {
     tip("Scans two networks in one go (508 addresses).");
     ImGui::Spacing();
 
-    float btnW = ImGui::CalcTextSize("Local subnet").x + ImGui::GetStyle().FramePadding.x * 2;
+    float btnW = ImGui::CalcTextSize(T("Local subnet")).x + ImGui::GetStyle().FramePadding.x * 2;
     float scanW = ImGui::GetFontSize() * 5.5f;
     float sp = ImGui::GetStyle().ItemSpacing.x;
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - btnW - scanW - sp * 2);
-    bool enter = ImGui::InputTextWithHint("##range", "Type a range, e.g. 192.168.1.1-254", s.range, sizeof s.range,
+    bool enter = ImGui::InputTextWithHint("##range", T("Type a range, e.g. 192.168.1.1-254"), s.range, sizeof s.range,
                                           ImGuiInputTextFlags_EnterReturnsTrue);
     ImGui::SameLine();
-    if (ImGui::Button("Local subnet")) {
+    if (ImGui::Button(T("Local subnet"))) {
         uint32_t a, b;
         if (localSubnet(a, b)) std::snprintf(s.range, sizeof s.range, "%s", rangeToString(a, b).c_str());
-        else setStatus("No active network adapter found.");
+        else setStatus(T("No active network adapter found."));
     }
     tip("Fills in the network this PC is connected to, so you don't have to type it.");
     ImGui::SameLine();
@@ -367,24 +370,24 @@ void pageIpScan() {
     } else if (accentButton("Scan", false, {scanW, 0}) || enter) {
         uint32_t a, b;
         s.ipErr.clear();
-        if (!parseRange(s.range, a, b)) s.ipErr = "Invalid range. Examples: 192.168.1.1-254 or 192.168.1.0/24";
+        if (!parseRange(s.range, a, b)) s.ipErr = T("Invalid range. Examples: 192.168.1.1-254 or 192.168.1.0/24");
         else if (s.ips.start(a, b, s.ipOpt, s.ipErr)) s.selectedIp = 0;
     }
 
     ImGui::BeginDisabled(running);
-    ImGui::Checkbox("Resolve names", &s.ipOpt.resolveNames);
+    ImGui::Checkbox(T("Resolve names"), &s.ipOpt.resolveNames);
     tip("Looks up the computer name of each device (for example DESKTOP-4F2A or printer.lan). Slightly slower.");
     ImGui::SameLine();
-    ImGui::Checkbox("ARP probe", &s.ipOpt.arpProbe);
+    ImGui::Checkbox(T("ARP probe"), &s.ipOpt.arpProbe);
     tip("Some devices (phones, PCs with a firewall) ignore ping. ARP finds them anyway, "
         "but only inside your own subnet. They appear as 'ARP only'.");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 9);
-    ImGui::SliderInt("Threads", &s.ipOpt.threads, 8, 256);
+    ImGui::SliderInt(T("Threads"), &s.ipOpt.threads, 8, 256);
     tip("How many addresses are checked at the same time. 64 is fast and safe; raise it for very large ranges.");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 9);
-    ImGui::SliderInt("Timeout", &s.ipOpt.timeoutMs, 200, 3000, "%d ms");
+    ImGui::SliderInt(T("Timeout"), &s.ipOpt.timeoutMs, 200, 3000, "%d ms");
     tip("How long to wait for each reply. Use 1500 ms or more on slow or Wi-Fi networks.");
     ImGui::EndDisabled();
 
@@ -399,13 +402,13 @@ void pageIpScan() {
                                    ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Hideable;
     if (ImGui::BeginTable("hosts", 6, tf, tsize)) {
         ImGui::TableSetupScrollFreeze(0, 1);
-        ImGui::TableSetupColumn("Status", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFontSize() * 6.8f);
-        ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch, 1.4f);
-        ImGui::TableSetupColumn("IP", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_DefaultSort,
+        ImGui::TableSetupColumn(T("Status"), ImGuiTableColumnFlags_WidthFixed, ImGui::GetFontSize() * 6.8f);
+        ImGui::TableSetupColumn(T("Name"), ImGuiTableColumnFlags_WidthStretch, 1.8f);
+        ImGui::TableSetupColumn(T("IP"), ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_DefaultSort,
                                 ImGui::GetFontSize() * 9.f);
-        ImGui::TableSetupColumn("MAC address", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFontSize() * 11.f);
-        ImGui::TableSetupColumn("Latency", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFontSize() * 6.f);
-        ImGui::TableSetupColumn("OS (TTL guess)", ImGuiTableColumnFlags_WidthStretch, 1.f);
+        ImGui::TableSetupColumn(T("MAC address"), ImGuiTableColumnFlags_WidthFixed, ImGui::GetFontSize() * 11.f);
+        ImGui::TableSetupColumn(T("Latency"), ImGuiTableColumnFlags_WidthFixed, ImGui::GetFontSize() * 6.f);
+        ImGui::TableSetupColumn(T("OS (TTL guess)"), ImGuiTableColumnFlags_WidthStretch, 1.5f);
         ImGui::TableHeadersRow();
 
         if (ImGuiTableSortSpecs* sp2 = ImGui::TableGetSortSpecs(); sp2 && sp2->SpecsCount > 0) {
@@ -440,22 +443,22 @@ void pageIpScan() {
                 ImGui::TextColored(gAccent, "%s", ip.c_str());
                 ImGui::PopFont();
                 ImGui::Separator();
-                if (ImGui::MenuItem("Ping", "is it reachable?")) goTests(ip, 0);
-                if (ImGui::MenuItem("Traceroute", "route to it")) goTests(ip, 1);
-                if (ImGui::MenuItem("Scan ports...", "e.g. is 80 / 3389 open?")) goPorts(ip);
+                if (ImGui::MenuItem(T("Ping"), T("is it reachable?"))) goTests(ip, 0);
+                if (ImGui::MenuItem(T("Traceroute"), T("route to it"))) goTests(ip, 1);
+                if (ImGui::MenuItem(T("Scan ports..."), T("e.g. is 80 / 3389 open?"))) goPorts(ip);
                 ImGui::Separator();
-                if (ImGui::MenuItem("Open shared folders", ("\\\\" + ip).c_str())) openShell(("\\\\" + ip).c_str());
-                if (ImGui::MenuItem("Remote desktop", "mstsc /v:ip")) openShell("mstsc.exe", "/v:" + ip);
-                if (ImGui::MenuItem("Open in browser", ("http://" + ip).c_str())) openShell(("http://" + ip).c_str());
+                if (ImGui::MenuItem(T("Open shared folders"), ("\\\\" + ip).c_str())) openShell(("\\\\" + ip).c_str());
+                if (ImGui::MenuItem(T("Remote desktop"), T("mstsc /v:ip"))) openShell("mstsc.exe", "/v:" + ip);
+                if (ImGui::MenuItem(T("Open in browser"), ("http://" + ip).c_str())) openShell(("http://" + ip).c_str());
                 ImGui::Separator();
-                if (ImGui::MenuItem("Copy IP", ip.c_str())) copyText(ip, "IP");
-                if (ImGui::MenuItem("Copy MAC", r.mac.c_str(), false, r.mac != "-")) copyText(r.mac, "MAC");
+                if (ImGui::MenuItem(T("Copy IP"), ip.c_str())) copyText(ip, "IP");
+                if (ImGui::MenuItem(T("Copy MAC"), r.mac.c_str(), false, r.mac != "-")) copyText(r.mac, "MAC");
                 ImGui::EndPopup();
             }
             ImGui::SameLine(0, 0);
             dot(r.icmp ? kGreen : kYellow);
             ImGui::SameLine();
-            ImGui::TextColored(r.icmp ? kGreen : kYellow, "%s", r.icmp ? "alive" : "ARP only");
+            ImGui::TextColored(r.icmp ? kGreen : kYellow, "%s", r.icmp ? T("alive") : T("ARP only"));
             ImGui::TableSetColumnIndex(1);
             ImGui::TextUnformatted(r.hostname.c_str());
             ImGui::TableSetColumnIndex(2);
@@ -463,17 +466,17 @@ void pageIpScan() {
             ImGui::TableSetColumnIndex(3);
             ImGui::TextUnformatted(r.mac.c_str());
             ImGui::TableSetColumnIndex(4);
-            if (r.icmp) ImGui::Text("%.1f ms", r.rttMs);
+            if (r.icmp) ImGui::Text(T("%.1f ms"), r.rttMs);
             else ImGui::TextDisabled("-");
             ImGui::TableSetColumnIndex(5);
-            if (r.icmp) ImGui::Text("%s  (%d)", r.os.c_str(), r.ttl);
+            if (r.icmp) ImGui::Text(T("%s  (%d)"), r.os.c_str(), r.ttl);
             else ImGui::TextDisabled("-");
             ImGui::PopID();
         }
         if (rows.empty()) {
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(1);
-            ImGui::TextColored(kMuted2, "%s", running ? "Scanning..." : "No results yet - press Scan.");
+            ImGui::TextColored(kMuted2, "%s", running ? T("Scanning...") : T("No results yet - press Scan."));
         }
         ImGui::EndTable();
     }
@@ -485,11 +488,11 @@ void pageIpScan() {
     uint64_t unknown = total > done ? total - done : 0;
     ImGui::AlignTextToFramePadding();
     const float fy = ImGui::GetStyle().FramePadding.y;
-    dot(kGreen, true, fy); ImGui::SameLine(); ImGui::Text("%llu alive", alive);
+    dot(kGreen, true, fy); ImGui::SameLine(); ImGui::Text(T("%llu alive"), alive);
     tip("Devices that answered.");
-    ImGui::SameLine(0, 18); dot(kRed, true, fy); ImGui::SameLine(); ImGui::Text("%llu dead", dead);
+    ImGui::SameLine(0, 18); dot(kRed, true, fy); ImGui::SameLine(); ImGui::Text(T("%llu dead"), dead);
     tip("Addresses that did not answer (nobody home, or hidden by a firewall).");
-    ImGui::SameLine(0, 18); dot(kMuted2, false, fy); ImGui::SameLine(); ImGui::Text("%llu unknown", unknown);
+    ImGui::SameLine(0, 18); dot(kMuted2, false, fy); ImGui::SameLine(); ImGui::Text(T("%llu unknown"), unknown);
     tip("Addresses not checked yet.");
     if (total > 0) {
         ImGui::SameLine(0, 24);
@@ -499,11 +502,11 @@ void pageIpScan() {
     }
     if (ImGui::GetTime() < s.statusUntil) { ImGui::SameLine(0, 24); ImGui::TextColored(gAccent, "%s", s.status.c_str()); }
 
-    float exportW = ImGui::CalcTextSize("Export CSV").x + ImGui::GetStyle().FramePadding.x * 2;
+    float exportW = ImGui::CalcTextSize(T("Export CSV")).x + ImGui::GetStyle().FramePadding.x * 2;
     ImGui::SameLine(ImGui::GetWindowWidth() - exportW - ImGui::GetStyle().WindowPadding.x);
-    if (ImGui::Button("Export CSV")) {
+    if (ImGui::Button(T("Export CSV"))) {
         if (rows.empty()) {
-            setStatus("Nothing to export.");
+            setStatus(T("Nothing to export."));
         } else {
             std::vector<std::vector<std::string>> out;
             for (auto& r : rows)
@@ -511,8 +514,8 @@ void pageIpScan() {
                                r.icmp ? fmt("%.1f", r.rttMs) : "", r.os});
             std::filesystem::path p = "ip_scan.csv";
             setStatus(writeCsv(p, {"Status", "Name", "IP", "MAC", "Latency (ms)", "OS"}, out)
-                          ? "Saved " + std::filesystem::absolute(p).string()
-                          : "Could not write ip_scan.csv");
+                          ? fmt(T("Saved %s"), std::filesystem::absolute(p).string().c_str())
+                          : std::string(T("Could not write the file.")));
         }
     }
     tip("Saves the table to ip_scan.csv next to the program. Opens in Excel.");
@@ -540,7 +543,7 @@ void pagePorts() {
     ImGui::Spacing();
 
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 14);
-    ImGui::InputTextWithHint("##host", "IP or host name", s.pHost, sizeof s.pHost);
+    ImGui::InputTextWithHint("##host", T("IP or host name"), s.pHost, sizeof s.pHost);
     tip("Example: 192.168.1.1 or myserver.local");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 6);
@@ -558,11 +561,11 @@ void pagePorts() {
     }
     ImGui::BeginDisabled(running);
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 9);
-    ImGui::SliderInt("Threads", &s.pThreads, 8, 512);
+    ImGui::SliderInt(T("Threads"), &s.pThreads, 8, 512);
     tip("How many ports are tested at the same time.");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 9);
-    ImGui::SliderInt("Timeout", &s.pTimeout, 100, 3000, "%d ms");
+    ImGui::SliderInt(T("Timeout"), &s.pTimeout, 100, 3000, "%d ms");
     tip("How long to wait for each port. Closed ports on a local network answer instantly; filtered ones wait.");
     ImGui::EndDisabled();
     if (!s.pErr.empty()) ImGui::TextColored(kRed, "%s", s.pErr.c_str());
@@ -573,27 +576,27 @@ void pagePorts() {
     if (ImGui::BeginTable("ports", 3, ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV,
                           ImVec2(0, ImGui::GetContentRegionAvail().y - statusH))) {
         ImGui::TableSetupScrollFreeze(0, 1);
-        ImGui::TableSetupColumn("State", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFontSize() * 6.5f);
-        ImGui::TableSetupColumn("Port", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFontSize() * 6.f);
-        ImGui::TableSetupColumn("Service", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn(T("State"), ImGuiTableColumnFlags_WidthFixed, ImGui::GetFontSize() * 6.5f);
+        ImGui::TableSetupColumn(T("Port"), ImGuiTableColumnFlags_WidthFixed, ImGui::GetFontSize() * 6.f);
+        ImGui::TableSetupColumn(T("Service"), ImGuiTableColumnFlags_WidthStretch);
         ImGui::TableHeadersRow();
         for (const auto& p : res) {
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
-            dot(kGreen); ImGui::SameLine(); ImGui::TextColored(kGreen, "open");
+            dot(kGreen); ImGui::SameLine(); ImGui::TextColored(kGreen, T("open"));
             ImGui::TableSetColumnIndex(1); ImGui::Text("%u", p.port);
             ImGui::TableSetColumnIndex(2); ImGui::TextUnformatted(p.service.empty() ? "-" : p.service.c_str());
         }
         if (res.empty() && total > 0) {
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(2);
-            ImGui::TextColored(kMuted2, "%s", running ? "Scanning..." : "No open ports found.");
+            ImGui::TextColored(kMuted2, "%s", running ? T("Scanning...") : T("No open ports found."));
         }
         ImGui::EndTable();
     }
     ImGui::AlignTextToFramePadding();
     if (total > 0) {
-        ImGui::Text("%zu open", res.size());
+        ImGui::Text(T("%zu open"), res.size());
         ImGui::SameLine(0, 18);
         ledBar(float(done) / float(total), running, done == total ? kGreen : gAccent);
         ImGui::SameLine();
@@ -622,7 +625,7 @@ void pageArp() {
 
     ImGui::BeginDisabled(running);
     ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - ImGui::GetFontSize() * 26);
-    const char* cur = s.adapters.empty() ? "(no adapters)" : s.adapters[s.adIdx].description.c_str();
+    const char* cur = s.adapters.empty() ? T("(no adapters)") : s.adapters[s.adIdx].description.c_str();
     if (ImGui::BeginCombo("##adapter", cur)) {
         for (int i = 0; i < int(s.adapters.size()); ++i)
             if (ImGui::Selectable(s.adapters[i].description.c_str(), i == s.adIdx)) s.adIdx = i;
@@ -630,7 +633,7 @@ void pageArp() {
     }
     tip("Choose the adapter your traffic goes through - usually the Ethernet or Wi-Fi one.");
     ImGui::SameLine();
-    if (ImGui::Button("Refresh")) s.adaptersLoaded = false;
+    if (ImGui::Button(T("Refresh"))) s.adaptersLoaded = false;
     tip("Reload the list of network adapters.");
     ImGui::EndDisabled();
     ImGui::SameLine();
@@ -638,24 +641,24 @@ void pageArp() {
         if (accentButton("Stop", true, {ImGui::GetFontSize() * 5.5f, 0})) s.arp.requestStop();
     } else if (accentButton("Start", false, {ImGui::GetFontSize() * 5.5f, 0})) {
         std::string e;
-        if (s.adapters.empty()) s.arpErr = "No capture adapter available.";
+        if (s.adapters.empty()) s.arpErr = T("No capture adapter available.");
         else if (!s.arp.start(s.adapters[s.adIdx].name, e)) s.arpErr = e;
         else s.arpErr.clear();
     }
     ImGui::SameLine();
-    if (ImGui::Button("Clear")) { s.arp.clear(); s.arpCachedCount = SIZE_MAX; }
+    if (ImGui::Button(T("Clear"))) { s.arp.clear(); s.arpCachedCount = SIZE_MAX; }
     tip("Empties the list and forgets which MAC belongs to which IP.");
     ImGui::SameLine();
-    if (ImGui::Button("Save CSV")) {
+    if (ImGui::Button(T("Save CSV"))) {
         auto ev = s.arp.events();
-        if (ev.empty()) setStatus("No data to save.");
+        if (ev.empty()) setStatus(T("No data to save."));
         else {
             std::vector<std::vector<std::string>> out;
             for (auto& e : ev) out.push_back({e.time, e.op, e.ip, e.mac, e.warning});
             std::filesystem::path p = "arp_logs.csv";
             setStatus(writeCsv(p, {"Time", "Type", "IP", "MAC", "Warning"}, out)
-                          ? "Saved " + std::filesystem::absolute(p).string()
-                          : "Could not write arp_logs.csv");
+                          ? fmt(T("Saved %s"), std::filesystem::absolute(p).string().c_str())
+                          : std::string(T("Could not write the file.")));
         }
     }
     tip("Saves everything captured so far to arp_logs.csv next to the program.");
@@ -671,11 +674,11 @@ void pageArp() {
     if (ImGui::BeginTable("arp", 5, ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV,
                           ImVec2(0, ImGui::GetContentRegionAvail().y - statusH))) {
         ImGui::TableSetupScrollFreeze(0, 1);
-        ImGui::TableSetupColumn("Time", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFontSize() * 6.f);
-        ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFontSize() * 6.f);
-        ImGui::TableSetupColumn("IP", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFontSize() * 9.f);
-        ImGui::TableSetupColumn("MAC", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFontSize() * 11.f);
-        ImGui::TableSetupColumn("Note", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn(T("Time"), ImGuiTableColumnFlags_WidthFixed, ImGui::GetFontSize() * 6.f);
+        ImGui::TableSetupColumn(T("Type"), ImGuiTableColumnFlags_WidthFixed, ImGui::GetFontSize() * 6.f);
+        ImGui::TableSetupColumn(T("IP"), ImGuiTableColumnFlags_WidthFixed, ImGui::GetFontSize() * 9.f);
+        ImGui::TableSetupColumn(T("MAC"), ImGuiTableColumnFlags_WidthFixed, ImGui::GetFontSize() * 11.f);
+        ImGui::TableSetupColumn(T("Note"), ImGuiTableColumnFlags_WidthStretch);
         ImGui::TableHeadersRow();
         bool atBottom = ImGui::GetScrollY() >= ImGui::GetScrollMaxY() - 2.f;
         ImGuiListClipper clip;
@@ -695,7 +698,7 @@ void pageArp() {
         if (s.arpCache.empty()) {
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(4);
-            ImGui::TextColored(kMuted2, "%s", running ? "Waiting for ARP traffic..." : "Not monitoring.");
+            ImGui::TextColored(kMuted2, "%s", running ? T("Waiting for ARP traffic...") : T("Not monitoring."));
         }
         static size_t lastN = 0;
         if (lastN != s.arpCache.size()) { if (atBottom) ImGui::SetScrollHereY(1.f); lastN = s.arpCache.size(); }
@@ -704,13 +707,13 @@ void pageArp() {
     ImGui::AlignTextToFramePadding();
     const float fy = ImGui::GetStyle().FramePadding.y;
     dot(running ? kGreen : kMuted2, running, fy); ImGui::SameLine();
-    ImGui::Text("%s", running ? "monitoring" : "stopped");
+    ImGui::Text("%s", running ? T("monitoring") : T("stopped"));
     ImGui::SameLine(0, 18);
-    ImGui::Text("%zu packets", s.arpCache.size());
+    ImGui::Text(T("%zu packets"), s.arpCache.size());
     ImGui::SameLine(0, 18);
     int sp = s.arp.spoofCount();
     dot(sp ? kRed : kGreen, sp > 0, fy); ImGui::SameLine();
-    ImGui::TextColored(sp ? kRed : kMuted, "%d spoof warning%s", sp, sp == 1 ? "" : "s");
+    ImGui::TextColored(sp ? kRed : kMuted, T(sp == 1 ? "%d spoof warning" : "%d spoof warnings"), sp);
 }
 
 void pageTests() {
@@ -732,24 +735,24 @@ void pageTests() {
     ImGui::Spacing();
 
     ImGui::SetNextItemWidth(ImGui::GetFontSize() * 18);
-    bool enter = ImGui::InputTextWithHint("##thost", "host or IP", s.tHost, sizeof s.tHost,
+    bool enter = ImGui::InputTextWithHint("##thost", T("host or IP"), s.tHost, sizeof s.tHost,
                                           ImGuiInputTextFlags_EnterReturnsTrue);
     ImGui::SameLine();
     ImGui::BeginDisabled(running);
     if (accentButton("Ping") || enter) s.tests.ping(s.tHost);
     tip("Sends 4 small packets and reports the reply time and packet loss.");
     ImGui::SameLine();
-    if (ImGui::Button("Traceroute")) s.tests.traceroute(s.tHost);
+    if (ImGui::Button(T("Traceroute"))) s.tests.traceroute(s.tHost);
     tip("Lists every router between you and the target with its response time (up to 30 hops).");
     ImGui::SameLine();
-    if (ImGui::Button("DNS lookup")) s.tests.dns(s.tHost);
+    if (ImGui::Button(T("DNS lookup"))) s.tests.dns(s.tHost);
     tip("Name -> IP addresses, or IP -> name.");
     ImGui::EndDisabled();
     ImGui::SameLine();
     if (running) { if (accentButton("Stop", true)) s.tests.requestStop(); }
-    else if (ImGui::Button("Clear")) s.tests.log.clear();
+    else if (ImGui::Button(T("Clear"))) s.tests.log.clear();
     ImGui::SameLine();
-    if (ImGui::Button("Copy")) copyText(s.tests.log.joined(), "Output");
+    if (ImGui::Button(T("Copy"))) copyText(s.tests.log.joined(), "Output");
     tip("Copies the whole output to the clipboard.");
 
     drawLog("##testlog", s.tests.log, ImVec2(0, 0));
@@ -763,18 +766,18 @@ bool navItem(const char* label, const char* sub, bool active) {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     if (active) dl->AddRectFilled(p, {p.x + 3, p.y + size.y}, U(gAccent), 2.f);
     float x = p.x + ImGui::GetFontSize() * 1.0f;
-    dl->AddText(gBold, ImGui::GetFontSize(), {x, p.y + size.y * 0.16f}, U(active ? kText : kMuted), label);
-    dl->AddText(ImGui::GetFont(), ImGui::GetFontSize() * 0.82f, {x, p.y + size.y * 0.56f}, U(kMuted2), sub);
+    dl->AddText(gBold, ImGui::GetFontSize(), {x, p.y + size.y * 0.16f}, U(active ? kText : kMuted), T(label));
+    dl->AddText(ImGui::GetFont(), ImGui::GetFontSize() * 0.82f, {x, p.y + size.y * 0.56f}, U(kMuted2), T(sub));
     return clicked;
 }
 
 void guideSection(const char* title, const char* what, const char* example) {
     ImGui::PushFont(gBold);
-    ImGui::TextColored(gAccent, "%s", title);
+    ImGui::TextColored(gAccent, "%s", T(title));
     ImGui::PopFont();
     ImGui::PushTextWrapPos(0);
-    ImGui::TextColored(kText, "%s", what);
-    ImGui::TextColored(kMuted, "Example: %s", example);
+    ImGui::TextColored(kText, "%s", T(what));
+    ImGui::TextColored(kMuted, T("Example: %s"), T(example));
     ImGui::PopTextWrapPos();
     ImGui::Spacing();
     ImGui::Spacing();
@@ -788,11 +791,27 @@ void windowButtons(float y0, float h, float viewW) {
     State& s = S();
     const float w = ImGui::GetFontSize() * 2.7f;
     const float u = ImGui::GetFontSize() / 19.f;
-    gButtonsLeft = viewW - 3 * w;
+    const float langW = w * 0.9f;
+    gButtonsLeft = viewW - 3 * w - langW;
     ImDrawList* dl = ImGui::GetWindowDrawList();
     const bool zoomed = IsZoomed(gHwnd) != 0;
+
+    {  // dil düğmesi (EN <-> TR)
+        ImVec2 a{gButtonsLeft, y0}, b{a.x + langW, y0 + h};
+        ImGui::SetCursorScreenPos(a);
+        bool clicked = ImGui::InvisibleButton("##lang", {langW, h});
+        bool hot = ImGui::IsItemHovered();
+        tip("Switch language");
+        if (hot) dl->AddRectFilled(a, b, U(ImVec4(1, 1, 1, 0.09f)));
+        const char* code = lang() == Lang::TR ? "TR" : "EN";
+        ImVec2 ts = ImGui::CalcTextSize(code);
+        dl->AddText(gBold, ImGui::GetFontSize() * 0.9f, {a.x + (langW - ts.x) * 0.5f, a.y + (h - ts.y) * 0.5f},
+                    U(hot ? gAccent : kMuted), code);
+        if (clicked) setLang(lang() == Lang::TR ? Lang::EN : Lang::TR);
+    }
+
     for (int i = 0; i < 3; ++i) {
-        ImVec2 a{gButtonsLeft + i * w, y0}, b{a.x + w, y0 + h};
+        ImVec2 a{gButtonsLeft + langW + i * w, y0}, b{a.x + w, y0 + h};
         ImGui::SetCursorScreenPos(a);
         ImGui::PushID(i);
         bool clicked = ImGui::InvisibleButton("##wb", {w, h});
@@ -835,23 +854,28 @@ void menuBar() {
         drawLogo(ImGui::GetWindowDrawList(), {p.x + 12, p.y + (h - lg) * 0.5f}, lg);
         ImGui::Dummy({lg + 24, h});
         gMenuLeft = ImGui::GetItemRectMax().x - wp.x;
-        if (ImGui::BeginMenu("File")) {
-            if (ImGui::MenuItem("Exit", "close the program")) s.quit = true;
+        if (ImGui::BeginMenu(T("File"))) {
+            if (ImGui::MenuItem(T("Exit"), T("close the program"))) s.quit = true;
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("View")) {
-            if (ImGui::BeginMenu("Theme")) {
+        if (ImGui::BeginMenu(T("View"))) {
+            if (ImGui::BeginMenu(T("Theme"))) {
                 for (int i = 0; i < int(std::size(kThemes)); ++i)
-                    if (ImGui::MenuItem(kThemes[i].name, i == 0 ? "default" : "", s.theme == i)) { s.theme = i; applyTheme(i); }
+                    if (ImGui::MenuItem(T(kThemes[i].name), i == 0 ? T("default") : "", s.theme == i)) { s.theme = i; applyTheme(i); }
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu(T("Language"))) {
+                if (ImGui::MenuItem("English", nullptr, lang() == Lang::EN)) setLang(Lang::EN);
+                if (ImGui::MenuItem("Türkçe", nullptr, lang() == Lang::TR)) setLang(Lang::TR);
                 ImGui::EndMenu();
             }
             ImGui::EndMenu();
         }
-        const bool helpOpen = ImGui::BeginMenu("Help");
+        const bool helpOpen = ImGui::BeginMenu(T("Help"));
         gMenuRight = ImGui::GetItemRectMax().x - wp.x;
         if (helpOpen) {
-            if (ImGui::MenuItem("Quick guide", "what each tool does")) s.showGuide = true;
-            if (ImGui::MenuItem("About")) s.showAbout = true;
+            if (ImGui::MenuItem(T("Quick guide"), T("what each tool does"))) s.showGuide = true;
+            if (ImGui::MenuItem(T("About"))) s.showAbout = true;
             ImGui::EndMenu();
         }
         windowButtons(wp.y, h, ImGui::GetMainViewport()->Size.x);
@@ -869,6 +893,7 @@ bool inDragArea(int x, int y) {
 }
 
 void init(float dpiScale, void* hwnd) {
+    initLang();
     gHwnd = static_cast<HWND>(hwnd);
     ImGuiIO& io = ImGui::GetIO();
     io.IniFilename = nullptr;
@@ -935,7 +960,7 @@ void draw() {
         ImGui::GetWindowDrawList()->AddText(gTitle, ImGui::GetFontSize() * 1.35f,
                                             {p.x + logo + 10, p.y - 1}, U(gAccent), "LETHAS");
         ImGui::GetWindowDrawList()->AddText(ImGui::GetFont(), ImGui::GetFontSize() * 0.8f,
-                                            {p.x + logo + 11, p.y + logo * 0.62f}, U(kMuted), "NETWORK TOOLKIT");
+                                            {p.x + logo + 11, p.y + logo * 0.62f}, U(kMuted), T("NETWORK TOOLKIT"));
         ImGui::Dummy({0, logo + ImGui::GetFontSize() * 0.9f});
     }
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, {0, 4});
@@ -945,7 +970,7 @@ void draw() {
     if (navItem("Network Tests", "Ping, trace, DNS", s.page == Page::Tests)) s.page = Page::Tests;
     ImGui::PopStyleVar();
     ImGui::SetCursorPosY(ImGui::GetWindowHeight() - ImGui::GetTextLineHeight() * 1.8f);
-    ImGui::TextColored(kMuted2, "v0.2.0");
+    ImGui::TextColored(kMuted2, "v%s", kVersion);
     ImGui::EndChild();
     ImGui::PopStyleVar();
     ImGui::PopStyleColor();
@@ -969,30 +994,30 @@ void draw() {
         ImGui::GetForegroundDrawList()->AddRect(vp->Pos, {vp->Pos.x + vp->Size.x, vp->Pos.y + vp->Size.y},
                                                 U(alpha(kBrand, 0.28f)));
 
-    if (s.showAbout) { ImGui::OpenPopup("About"); s.showAbout = false; }
-    if (s.showGuide) { ImGui::OpenPopup("Quick guide"); s.showGuide = false; }
+    if (s.showAbout) { ImGui::OpenPopup(T("About")); s.showAbout = false; }
+    if (s.showGuide) { ImGui::OpenPopup(T("Quick guide")); s.showGuide = false; }
     ImVec2 c = vp->GetCenter();
 
     ImGui::SetNextWindowPos(c, ImGuiCond_Appearing, {0.5f, 0.5f});
-    if (ImGui::BeginPopupModal("About", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+    if (ImGui::BeginPopupModal(T("About"), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         drawLogo(ImGui::GetWindowDrawList(), ImGui::GetCursorScreenPos(), ImGui::GetFontSize() * 4.f);
         ImGui::Dummy({ImGui::GetFontSize() * 4.f, ImGui::GetFontSize() * 4.f});
         ImGui::SameLine();
         ImGui::BeginGroup();
         sectionTitle("Lethas Toolkit");
-        muted("Version 0.2.0 - C++ edition");
+        muted(fmt(T("Version %s - C++ edition"), kVersion).c_str());
         muted("Network analysis and diagnostics.");
         muted("Colors: tmog.org palette. Layout inspired by Advanced IP Scanner.");
         ImGui::EndGroup();
         ImGui::Spacing();
-        if (ImGui::Button("Close", {ImGui::GetFontSize() * 6, 0})) ImGui::CloseCurrentPopup();
+        if (ImGui::Button(T("Close"), {ImGui::GetFontSize() * 6, 0})) ImGui::CloseCurrentPopup();
         ImGui::EndPopup();
     }
 
     ImGui::SetNextWindowPos(c, ImGuiCond_Appearing, {0.5f, 0.5f});
     ImGui::SetNextWindowSize({std::min(vp->WorkSize.x * 0.9f, ImGui::GetFontSize() * 42.f),
                               std::min(vp->WorkSize.y * 0.9f, ImGui::GetFontSize() * 34.f)});
-    if (ImGui::BeginPopupModal("Quick guide", nullptr, ImGuiWindowFlags_NoResize)) {
+    if (ImGui::BeginPopupModal(T("Quick guide"), nullptr, ImGuiWindowFlags_NoResize)) {
         ImGui::BeginChild("##guide", ImVec2(0, -ImGui::GetFrameHeightWithSpacing() - 6));
         guideSection("IP Scanner - who is on my network?",
                      "Pings every address in a range and lists the devices that answer, with name, MAC address and speed.",
@@ -1012,7 +1037,7 @@ void draw() {
                      "The LED bar fills as the scan progresses.",
                      "28 LEDs, 14 lit = 50% done.");
         ImGui::EndChild();
-        if (ImGui::Button("Close", {ImGui::GetFontSize() * 6, 0})) ImGui::CloseCurrentPopup();
+        if (ImGui::Button(T("Close"), {ImGui::GetFontSize() * 6, 0})) ImGui::CloseCurrentPopup();
         ImGui::EndPopup();
     }
 }

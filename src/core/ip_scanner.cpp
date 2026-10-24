@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "core/common.h"
+#include "core/i18n.h"
 #include "core/icmp.h"
 
 namespace lt {
@@ -20,11 +21,11 @@ void IpScanner::join() {
 }
 
 bool IpScanner::start(uint32_t first, uint32_t last, const IpScanOptions& opt, std::string& err) {
-    if (running()) { err = "A scan is already running."; return false; }
+    if (running()) { err = T("A scan is already running."); return false; }
     join();
-    if (first > last) { err = "Start IP must not be greater than end IP."; return false; }
+    if (first > last) { err = T("Start IP must not be greater than end IP."); return false; }
     uint64_t count = uint64_t(last) - first + 1;
-    if (count > kMaxHosts) { err = "Range too large (max 65536 hosts)."; return false; }
+    if (count > kMaxHosts) { err = T("Range too large (max 65536 hosts)."); return false; }
 
     {
         std::lock_guard lk(mutex_);

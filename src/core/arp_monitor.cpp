@@ -4,6 +4,7 @@
 #include <windows.h>
 
 #include "core/common.h"
+#include "core/i18n.h"
 
 namespace lt {
 namespace {
@@ -48,7 +49,7 @@ struct Pcap {
         dll = LoadLibraryExA(npcap.c_str(), nullptr, LOAD_WITH_ALTERED_SEARCH_PATH);
         if (!dll) dll = LoadLibraryA("wpcap.dll");  // WinPcap uyumluluk modu
         if (!dll) {
-            err = "Npcap not found. Install it from https://npcap.com and restart the app.";
+            err = T("Npcap not found. Install it from https://npcap.com and restart the app.");
             return false;
         }
         auto get = [&](auto& fn, const char* name) {
@@ -61,7 +62,7 @@ struct Pcap {
                   get(next_ex, "pcap_next_ex") && get(geterr, "pcap_geterr") &&
                   get(close, "pcap_close");
         if (!ok) {
-            err = "wpcap.dll is missing required functions.";
+            err = T("wpcap.dll is missing required functions.");
             FreeLibrary(dll);
             dll = nullptr;
         }
@@ -92,14 +93,14 @@ std::vector<CaptureAdapter> ArpMonitor::adapters(std::string& err) {
     for (auto* d = devs; d; d = d->next)
         out.push_back({d->name ? d->name : "", d->description ? d->description : d->name});
     pcap().freealldevs(devs);
-    if (out.empty()) err = "No capture adapters found (run as administrator?).";
+    if (out.empty()) err = T("No capture adapters found (run as administrator?).");
     return out;
 }
 
 bool ArpMonitor::start(const std::string& adapterName, std::string& err) {
     if (running_) return true;
     if (!pcap().load(err)) return false;
-    if (adapterName.empty()) { err = "Select an adapter."; return false; }
+    if (adapterName.empty()) { err = T("Select an adapter."); return false; }
     if (thread_.joinable()) thread_.join();
     {
         std::lock_guard lk(mutex_);
@@ -117,7 +118,7 @@ void ArpMonitor::loop(std::string adapterName) {
     pcap_t* h = p.open_live(adapterName.c_str(), 128, 1, 200, eb);
     if (!h) {
         std::lock_guard lk(mutex_);
-        error_ = std::string("Could not open adapter: ") + eb + " (try running as administrator)";
+        error_ = fmt(T("Could not open adapter: %s (try running as administrator)"), eb);
         running_ = false;
         return;
     }
@@ -134,7 +135,7 @@ void ArpMonitor::loop(std::string adapterName) {
         if (rc == 0) continue;  // zaman aşımı; iptal bayrağını tekrar kontrol et
         if (rc < 0) {
             std::lock_guard lk(mutex_);
-            error_ = std::string("Capture error: ") + p.geterr(h);
+            error_ = fmt(T("Capture error: %s"), p.geterr(h));
             break;
         }
         // Ethernet(14) + ARP(28); ethertype 0x0806
@@ -148,7 +149,7 @@ void ArpMonitor::loop(std::string adapterName) {
 
         ArpEvent ev;
         ev.time = nowTime();
-        ev.op = op == 1 ? "request" : "reply";
+        ev.op = op == 1 ? T("request") : T("reply");
         ev.ip = ipToString(spa);
         ev.mac = macToString(a + 8);
         record(std::move(ev));
@@ -163,7 +164,7 @@ void ArpMonitor::record(ArpEvent ev) {
     if (it == known_.end()) {
         known_[ev.ip] = ev.mac;
     } else if (it->second != ev.mac) {
-        ev.warning = "Possible ARP spoofing: " + ev.ip + " was " + it->second + ", now " + ev.mac;
+        ev.warning = fmt(T("Possible ARP spoofing: %s was %s, now %s"), ev.ip.c_str(), it->second.c_str(), ev.mac.c_str());
         it->second = ev.mac;  // her değişiklik bir kez uyarılsın
         ++spoofs_;
     }

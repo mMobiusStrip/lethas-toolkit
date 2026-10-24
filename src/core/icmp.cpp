@@ -1,4 +1,5 @@
 #include "core/icmp.h"
+#include "core/i18n.h"
 
 #include <winsock2.h>
 #include <iphlpapi.h>
@@ -45,12 +46,12 @@ PingReply IcmpSession::echo(uint32_t dest, int ttl, int timeoutMs) {
 
 std::string icmpStatusText(unsigned long s) {
     switch (s) {
-        case IP_SUCCESS: return "Success";
-        case IP_REQ_TIMED_OUT: return "Request timed out";
-        case IP_DEST_NET_UNREACHABLE: return "Destination net unreachable";
-        case IP_DEST_HOST_UNREACHABLE: return "Destination host unreachable";
-        case IP_TTL_EXPIRED_TRANSIT: return "TTL expired in transit";
-        default: return "ICMP error " + std::to_string(s);
+        case IP_SUCCESS: return T("Success");
+        case IP_REQ_TIMED_OUT: return T("Request timed out");
+        case IP_DEST_NET_UNREACHABLE: return T("Destination net unreachable");
+        case IP_DEST_HOST_UNREACHABLE: return T("Destination host unreachable");
+        case IP_TTL_EXPIRED_TRANSIT: return T("TTL expired in transit");
+        default: return std::string(T("ICMP error")) + " " + std::to_string(s);
     }
 }
 
@@ -58,7 +59,7 @@ const char* guessOsFromTtl(int ttl) {
     if (ttl <= 0) return "-";
     if (ttl <= 64) return "Linux/Unix/Android";
     if (ttl <= 128) return "Windows";
-    return "Network device";
+    return T("Network device");
 }
 
 }  // namespace lt

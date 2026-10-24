@@ -6,6 +6,7 @@
 #include <algorithm>
 
 #include "core/common.h"
+#include "core/i18n.h"
 
 namespace lt {
 
@@ -78,13 +79,13 @@ void PortScanner::join() {
 
 bool PortScanner::start(const std::string& host, int firstPort, int lastPort, int threads,
                         int timeoutMs, std::string& err) {
-    if (running()) { err = "A scan is already running."; return false; }
+    if (running()) { err = T("A scan is already running."); return false; }
     join();
 
     uint32_t ip;
-    if (!resolveIPv4(host, ip)) { err = "Invalid IP address or host name."; return false; }
+    if (!resolveIPv4(host, ip)) { err = T("Invalid IP address or host name."); return false; }
     if (firstPort < 1 || lastPort > 65535 || firstPort > lastPort) {
-        err = "Invalid port range (1-65535).";
+        err = T("Invalid port range (1-65535).");
         return false;
     }
 

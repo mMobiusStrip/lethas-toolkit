@@ -11,11 +11,14 @@
 
 **Lethas Toolkit**, Windows için C++20 ile yazılmış, tek `.exe` olarak çalışan hafif bir ağ analiz ve tanılama aracıdır. Önceki Python/CustomTkinter sürümünün yeniden yazılmış ve geliştirilmiş halidir.
 
+> **EN:** A lightweight Windows network toolkit written in C++20: IP scanner, port scanner, ARP spoofing monitor, ping / traceroute / DNS. Single `.exe`, English and Turkish UI (switch with the **EN/TR** button in the title bar).
+
 ![IP Scanner](docs/screenshot-ip-scanner.png)
 
 <details>
-<summary>Diğer ekranlar</summary>
+<summary>Diğer ekranlar / More screenshots</summary>
 
+![IP Tarayıcı (Türkçe)](docs/screenshot-ip-scanner-tr.png)
 ![Port Scanner](docs/screenshot-port-scanner.png)
 ![Network Tests](docs/screenshot-network-tests.png)
 ![Quick guide](docs/screenshot-quick-guide.png)
@@ -43,6 +46,8 @@ Python sürümüne göre yenilikler:
 - Sağ tık menüsü: ping, traceroute, port tarama, paylaşım klasörü, RDP, tarayıcı, IP/MAC kopyala
 - Tmog tarzı LED ilerleme çubukları, 5 renk teması, CSV dışa aktarma
 - Her ayarda açıklayıcı ipuçları (tooltip) ve **Help → Quick guide**
+- **Türkçe / İngilizce arayüz** (v0.3): başlık çubuğundaki **EN/TR** düğmesi veya **View → Language**; seçim hatırlanır, ilk açılışta sistem diline uyar
+- **Gömülü başlık çubuğu** (v0.3): sistem çerçevesi yok; simge durumuna küçült, ekranı kapla ve kapat düğmeleri arayüzün içinde
 
 ## İndirme
 
@@ -69,7 +74,7 @@ Arayüzsüz çekirdek için duman testi:
 ## Proje yapısı
 
 ```
-src/core/   arayüzden bağımsız çekirdek (icmp, port/ip tarayıcı, arp, testler)
+src/core/   arayüzden bağımsız çekirdek (icmp, port/ip tarayıcı, arp, testler, i18n + Türkçe çeviri tablosu)
 src/ui/     Dear ImGui arayüzü (tema, sayfalar, LED bileşenleri)
 src/main.cpp  Win32 + Direct3D 11 kabuğu
 resources/  uygulama ikonu
