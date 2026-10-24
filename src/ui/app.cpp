@@ -780,9 +780,61 @@ void guideSection(const char* title, const char* what, const char* example) {
     ImGui::Spacing();
 }
 
+HWND gHwnd = nullptr;
+float gTitleH = 0, gMenuLeft = 0, gMenuRight = 0, gButtonsLeft = 1e9f;
+
+// Gömülü başlık çubuğu: logo + menüler solda, pencere düğmeleri sağda.
+void windowButtons(float y0, float h, float viewW) {
+    State& s = S();
+    const float w = ImGui::GetFontSize() * 2.7f;
+    const float u = ImGui::GetFontSize() / 19.f;
+    gButtonsLeft = viewW - 3 * w;
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const bool zoomed = IsZoomed(gHwnd) != 0;
+    for (int i = 0; i < 3; ++i) {
+        ImVec2 a{gButtonsLeft + i * w, y0}, b{a.x + w, y0 + h};
+        ImGui::SetCursorScreenPos(a);
+        ImGui::PushID(i);
+        bool clicked = ImGui::InvisibleButton("##wb", {w, h});
+        ImGui::PopID();
+        bool hot = ImGui::IsItemHovered();
+        if (hot) dl->AddRectFilled(a, b, U(i == 2 ? alpha(kRed, 0.9f) : ImVec4(1, 1, 1, 0.09f)));
+        ImVec2 c{(a.x + b.x) * 0.5f, (a.y + b.y) * 0.5f};
+        ImU32 col = U(i == 2 && hot ? ImVec4(1, 1, 1, 1) : kMuted);
+        float t = std::max(1.f, u * 1.2f), k = 6.f * u;
+        if (i == 0) {
+            dl->AddLine({c.x - k, c.y}, {c.x + k, c.y}, col, t);
+        } else if (i == 1 && !zoomed) {
+            dl->AddRect({c.x - k, c.y - k}, {c.x + k, c.y + k}, col, 0, 0, t);
+        } else if (i == 1) {
+            const float o = 2.8f * u;  // geri al simgesi: iki iç içe kare
+            dl->AddRect({c.x - k, c.y - k + o}, {c.x + k - o, c.y + k}, col, 0, 0, t);
+            dl->AddLine({c.x - k + o, c.y - k}, {c.x + k, c.y - k}, col, t);
+            dl->AddLine({c.x + k, c.y - k}, {c.x + k, c.y + k - o}, col, t);
+        } else {
+            dl->AddLine({c.x - k, c.y - k}, {c.x + k, c.y + k}, col, t);
+            dl->AddLine({c.x + k, c.y - k}, {c.x - k, c.y + k}, col, t);
+        }
+        if (clicked) {
+            if (i == 0) ShowWindow(gHwnd, SW_MINIMIZE);
+            else if (i == 1) ShowWindow(gHwnd, zoomed ? SW_RESTORE : SW_MAXIMIZE);
+            else s.quit = true;
+        }
+    }
+}
+
 void menuBar() {
     State& s = S();
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, {12, ImGui::GetFontSize() * 0.55f});
     if (ImGui::BeginMenuBar()) {
+        const float h = ImGui::GetFrameHeight();
+        const ImVec2 wp = ImGui::GetWindowPos();
+        gTitleH = h;
+        float lg = h * 0.6f;
+        ImVec2 p = ImGui::GetCursorScreenPos();
+        drawLogo(ImGui::GetWindowDrawList(), {p.x + 12, p.y + (h - lg) * 0.5f}, lg);
+        ImGui::Dummy({lg + 24, h});
+        gMenuLeft = ImGui::GetItemRectMax().x - wp.x;
         if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("Exit", "close the program")) s.quit = true;
             ImGui::EndMenu();
@@ -795,18 +847,30 @@ void menuBar() {
             }
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("Help")) {
+        const bool helpOpen = ImGui::BeginMenu("Help");
+        gMenuRight = ImGui::GetItemRectMax().x - wp.x;
+        if (helpOpen) {
             if (ImGui::MenuItem("Quick guide", "what each tool does")) s.showGuide = true;
             if (ImGui::MenuItem("About")) s.showAbout = true;
             ImGui::EndMenu();
         }
+        windowButtons(wp.y, h, ImGui::GetMainViewport()->Size.x);
         ImGui::EndMenuBar();
     }
+    ImGui::PopStyleVar();
 }
 
 }  // namespace
 
-void init(float dpiScale) {
+bool inDragArea(int x, int y) {
+    if (y < 0 || y >= static_cast<int>(gTitleH)) return false;
+    const float fx = static_cast<float>(x);
+    if (fx >= gButtonsLeft) return false;
+    return fx < gMenuLeft || fx > gMenuRight;  // menü öğelerinin üstü tıklanabilir kalır
+}
+
+void init(float dpiScale, void* hwnd) {
+    gHwnd = static_cast<HWND>(hwnd);
     ImGuiIO& io = ImGui::GetIO();
     io.IniFilename = nullptr;
 
@@ -900,6 +964,10 @@ void draw() {
     ImGui::PopStyleVar();
     ImGui::PopStyleColor();
     ImGui::End();
+
+    if (!IsZoomed(gHwnd))  // ince pencere çerçevesi (sistem çerçevesi kaldırıldığı için)
+        ImGui::GetForegroundDrawList()->AddRect(vp->Pos, {vp->Pos.x + vp->Size.x, vp->Pos.y + vp->Size.y},
+                                                U(alpha(kBrand, 0.28f)));
 
     if (s.showAbout) { ImGui::OpenPopup("About"); s.showAbout = false; }
     if (s.showGuide) { ImGui::OpenPopup("Quick guide"); s.showGuide = false; }

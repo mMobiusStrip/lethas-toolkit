@@ -1,7 +1,11 @@
 // Win32 + Direct3D 11 + Dear ImGui kabuğu.
 #include <winsock2.h>
 #include <windows.h>
+#include <windowsx.h>
 #include <d3d11.h>
+#include <dwmapi.h>
+
+#include <algorithm>
 
 #include "imgui.h"
 #include "imgui_impl_dx11.h"
@@ -55,9 +59,49 @@ static void destroyDevice() {
     if (gDevice) { gDevice->Release(); gDevice = nullptr; }
 }
 
+static LRESULT hitTest(HWND hwnd, LPARAM lp) {
+    POINT pt{GET_X_LPARAM(lp), GET_Y_LPARAM(lp)};
+    RECT rc;
+    GetWindowRect(hwnd, &rc);
+    if (!IsZoomed(hwnd)) {  // kenar ve köşelerden yeniden boyutlandırma
+        UINT dpi = GetDpiForWindow(hwnd);
+        int b = GetSystemMetricsForDpi(SM_CXSIZEFRAME, dpi) + GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi);
+        b = std::max(b, 6);
+        bool l = pt.x < rc.left + b, r = pt.x >= rc.right - b, t = pt.y < rc.top + b, bt = pt.y >= rc.bottom - b;
+        if (t && l) return HTTOPLEFT;
+        if (t && r) return HTTOPRIGHT;
+        if (bt && l) return HTBOTTOMLEFT;
+        if (bt && r) return HTBOTTOMRIGHT;
+        if (l) return HTLEFT;
+        if (r) return HTRIGHT;
+        if (t) return HTTOP;
+        if (bt) return HTBOTTOM;
+    }
+    ScreenToClient(hwnd, &pt);
+    return ui::inDragArea(pt.x, pt.y) ? HTCAPTION : HTCLIENT;
+}
+
 static LRESULT CALLBACK wndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wp, lp)) return true;
     switch (msg) {
+        case WM_NCCALCSIZE:  // sistem başlık çubuğu/çerçevesi yok: istemci alanı tüm pencere
+            if (wp) {
+                if (IsZoomed(hwnd)) {  // ekranı kaplarken görev çubuğunu örtme
+                    MONITORINFO mi{sizeof mi};
+                    GetMonitorInfoW(MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST), &mi);
+                    reinterpret_cast<NCCALCSIZE_PARAMS*>(lp)->rgrc[0] = mi.rcWork;
+                }
+                return 0;
+            }
+            break;
+        case WM_NCHITTEST:
+            return hitTest(hwnd, lp);
+        case WM_GETMINMAXINFO: {
+            float s = GetDpiForWindow(hwnd) / 96.f;
+            auto* mm = reinterpret_cast<MINMAXINFO*>(lp);
+            mm->ptMinTrackSize = {static_cast<LONG>(980 * s), static_cast<LONG>(640 * s)};
+            return 0;
+        }
         case WM_SIZE:
             if (wp != SIZE_MINIMIZED) { gResizeW = LOWORD(lp); gResizeH = HIWORD(lp); }
             return 0;
@@ -81,8 +125,13 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int) {
                    nullptr, L"LethasToolkit", icon};
     RegisterClassExW(&wc);
     float scale = ImGui_ImplWin32_GetDpiScaleForMonitor(MonitorFromPoint({0, 0}, MONITOR_DEFAULTTOPRIMARY));
-    HWND hwnd = CreateWindowW(wc.lpszClassName, L"Lethas Toolkit", WS_OVERLAPPEDWINDOW, 100, 100,
+    // Çerçevesiz pencere: başlık çubuğunu arayüz çizer; THICKFRAME yeniden boyutlandırma/snap için kalır.
+    HWND hwnd = CreateWindowW(wc.lpszClassName, L"Lethas Toolkit",
+                              WS_POPUP | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU, 100, 100,
                               int(1280 * scale), int(780 * scale), nullptr, nullptr, inst, nullptr);
+    MARGINS shadow{1, 1, 1, 1};  // gölge ve yuvarlak köşeler için
+    DwmExtendFrameIntoClientArea(hwnd, &shadow);
+    SetWindowPos(hwnd, nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
 
     if (!createDevice(hwnd)) {
         MessageBoxW(hwnd, L"Direct3D 11 could not be initialized.", L"Lethas Toolkit", MB_ICONERROR);
@@ -95,7 +144,7 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int) {
     ImGui::CreateContext();
     ImGui_ImplWin32_Init(hwnd);
     ImGui_ImplDX11_Init(gDevice, gCtx);
-    ui::init(scale);
+    ui::init(scale, hwnd);
 
     const float clear[4] = {0.027f, 0.043f, 0.059f, 1.f};  // #070b0f
     bool done = false;

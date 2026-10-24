@@ -40,7 +40,7 @@ if(MSVC)
 endif()
 
 add_executable(LethasToolkit WIN32 src/main.cpp src/ui/app.cpp resources/app.rc)
-target_link_libraries(LethasToolkit PRIVATE lt_core imgui d3d11 dxgi shell32)
+target_link_libraries(LethasToolkit PRIVATE lt_core imgui d3d11 dxgi shell32 dwmapi)
 
 add_executable(core_smoke tests/core_smoke.cpp)
 target_link_libraries(core_smoke PRIVATE lt_core)
